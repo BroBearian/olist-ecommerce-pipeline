@@ -1,61 +1,82 @@
-# Olist E-commerce Pipeline & Dashboard
+# Olist E-commerce Analytics
+### From raw marketplace data to validated analytical tables and business dashboards
 
-End-to-end data pipeline (Databricks, Medallion Architecture) and Tableau dashboard on the Olist Brazilian E-commerce dataset. Business question: how do sales and delivery service vary across time, product categories and customer locations, and what should the business investigate?
+A completed team capstone using **Databricks, Python/PySpark, SQL, Tableau Public, and Power BI** to examine sales, delivery performance, and customer experience in the Brazilian Olist marketplace.
 
-🚧 **Status:** Completed. The pipeline is complete and the dashboards have been been finalized.
+**Business question:** How do sales and delivery service vary over time, across product categories, and between customer locations?
 
-@Christine: Please see version 1.1B of our runbook to replicate our steps in your own Databricks account :)
+## Explore the project
 
-## Team 3 "The Movie Magic Team" credits
+| Resource | What you can review |
+| --- | --- |
+| [Pipeline notebook](notebooks/olist_pipeline.ipynb) | Ingestion, cleaning, analytical modelling, and validation |
+| [Power BI dashboard](dashboards/powerbi/Team_3_PowerBI_Dashboard.pbix) | Download the report and open it in Power BI Desktop |
+| [Tableau workbook](dashboards/tableau/Final%20Project-Olist%20Dashboard_v2%201.twb) | Inspect the Tableau workbook; local CSV connections require exported data |
+| [Architecture diagram](images/medallion_architecture.png) | Pipeline stages and data flow |
 
-Team project by four members of the Generation Singapore Junior Data Engineer program (Amelia, Clarence, Fauzi, Riani). The pipeline follows our shared team guide (Databricks notebook, Bronze → Silver → Gold), and every member ran it end-to-end in their own workspace. Gold layer tables were exported and processed in Tableau Public and PowerBI Desktop.
+The Tableau Public dashboard was published as part of the project. Its live URL has not yet been added to this portfolio. The workbook is included above.
 
-## Tech stack
+## Architecture
 
-Databricks (Python/PySpark, SQL), Tableau Public, (Power BI Desktop)
+![Olist medallion architecture](images/medallion_architecture.png)
 
-## Data flow
+Nine source CSV files are loaded into Delta tables using a batch ELT workflow:
 
-Kaggle CSVs (9 files) → Bronze (raw) → Silver (cleaned, validated, audit tables) → Gold (dimension & fact tables) → CSV extracts (orders, items) → Tableau (& Power BI)
+- **Bronze:** preserve source data for traceability.
+- **Silver:** standardize types, remove duplicates, clean strings and geographic names, and handle invalid or missing values.
+- **Gold:** prepare dimensions and fact tables for business analysis.
+- **Audit:** record run metadata and data-quality results.
+- **Reporting:** export analytical tables for Tableau and Power BI.
 
-## Baseline metrics
+## Engineering decisions
 
-| Metric           | Value    |
-| ---------------- | -------- |
-| Total orders     | 99,441   |
-| Delivered GMV    | R$13.22M |
-| AOV              | R$137    |
-| On-time delivery | 93.22%   |
-| Avg review score | 4.09     |
+| Decision | Why it matters |
+| --- | --- |
+| Separate order-grain and item-grain facts | Preserve the appropriate grain for order KPIs and product analysis; avoid multiplying order-level measures |
+| Aggregate multiple payments per order before joining | Prevent one-to-many payment records from inflating totals |
+| Standardize geographic labels using city and state | Reduce inconsistent location labels and ambiguous city matches |
+| Track pipeline runs with a UUID | Associate outputs and audit records with a specific execution |
+| Use overwrite-based batch outputs | Allow repeat runs to replace the analytical snapshot |
 
-## Data quality & validation
+## Data quality and validation
 
-- Duplicate removal, blank-to-null conversion and type casting, with an audit table for cast errors
-- Primary-key duplicate and NULL checks that block the release when they fail
-- City name cleaning (Unicode, accents, spacing, case) with an audit trail
-- Reconciliation of item value against payment totals
-- Unit tests for business rules (money joins, on-time delivery)
-- Idempotent writes (`mode('overwrite')`), so re-runs are safe
-- Control totals compared between Databricks and Tableau
+The pipeline includes duplicate and NULL checks on keys, type-casting checks with audit records, geographic-cleaning audit trails, item/payment reconciliation, and business-rule tests. Control totals were compared between Databricks and the dashboards.
 
-## Key findings
+These checks make metric discrepancies visible before the results are interpreted. Snapshot overwrite is appropriate for this historical batch project; it does not demonstrate incremental ingestion or production scheduling.
 
-**1. Orders are concentrated in São Paulo.**
-São Paulo has about 42% of all orders (41,746 of 99,441), followed by Rio de Janeiro (13%) and Minas Gerais (12%).
+## Business findings
 
-**2. Delivery is slowest in Brazil's North and Northeast, but these states are a small share of orders.**
-The 10 slowest states are all in the North or Northeast and together account for about 4.7% of orders (about 4,700 of 99,441). The three slowest have small samples (Roraima 29.3 days on 46 orders, Amapá 68 orders, Amazonas 148 orders), so their averages should be read with caution. Higher-volume states such as Ceará (1,336 orders), Pará (975) and Maranhão (747) also average 21.2 to 23.8 days, so the pattern is not only small-sample noise.
+The original project analysis reported:
 
-## Metric definitions
+- **Order concentration:** São Paulo accounted for approximately 42% of orders (41,746 of the 99,441-order source baseline), followed by Rio de Janeiro and Minas Gerais.
+- **Regional delivery differences:** The ten states with the longest average delivery times were in the North or Northeast and represented approximately 4.7% of orders.
+- **Sample size matters:** Roraima averaged 29.3 delivery days on only 46 orders. Higher-volume states, including Ceará, Pará, and Maranhão, also showed long average delivery times, supporting further investigation.
 
-- **GMV (delivered):** sum of item prices of delivered orders, excluding freight. Not profit.
-- **AOV:** delivered GMV ÷ number of delivered orders.
-- **On-time rate:** share of eligible delivered orders delivered on or before the estimated date.
+**Recommended next steps:** Prioritize operational investigation where delivery delays coincide with meaningful order volumes; assess seller location and shipping routes; and test interventions before expanding them. Descriptive patterns alone do not establish causes.
 
-## Limitations
+## Reading the metrics
 
-Historical data (2016-2018). September-October 2018 are excluded from the trend chart because they are incomplete (16 and 4 orders); As such, **our Dashboards are cutoff at 31 August 2018***.  KPI totals include all orders. Late 2016 also has very few orders.
+The source repository defines delivered GMV as delivered item prices **excluding freight**, AOV as delivered GMV divided by delivered orders, and on-time delivery as eligible delivered orders arriving by the estimated date. These definitions should be checked against each dashboard calculation before comparing views.
+
+The source contains **99,441 orders**. The final Tableau reporting window of **September 2016 to August 2018** contains **99,421 orders**. These are different date scopes, so the baseline is not a dashboard total. Figures also depend on status, state, and other filters.
+
+## Scope and limitations
+
+- Historical Brazilian marketplace data from 2016–2018; findings are not current market estimates.
+- September and October 2018 are incomplete and excluded from the final Tableau reporting window.
+- Sparse states and early months require caution when comparing averages.
+- Raw Kaggle CSVs and exported dashboard CSVs are not bundled here.
+- The Tableau `.twb` references local CSV files and is not a self-contained packaged workbook.
+- This portfolio demonstrates batch data engineering and BI analysis, rather than a deployed production service.
+
+## Team and contribution
+
+Created by **Amelia, Clarence, Fauzi, and Riani** for the Generation Singapore Junior Data Engineer programme.
+
+**Clarence — team lead and primary contributor.** This portfolio presents the shared team deliverables and retains team attribution.
 
 ## Dataset
 
-Olist Brazilian E-Commerce Public Dataset, provided by Olist and hosted on [Kaggle](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce). Raw CSVs are not included in this repository.
+[Olist Brazilian E-Commerce Public Dataset on Kaggle](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce), provided by Olist.
+
+This portfolio branch curates the original capstone assets for technical and hiring review. Trainer replication guides and assessment documents are omitted.
