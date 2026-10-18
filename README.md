@@ -9,12 +9,13 @@ A completed team capstone using **Databricks, Python/PySpark, SQL, Tableau Publi
 
 | Resource | What you can review |
 | --- | --- |
+| [View interactive Tableau dashboard](https://public.tableau.com/app/profile/riani.y/viz/Olist_Dashboard_v2/OlistE-commercePerformanceDashboard) | Explore sales, delivery performance, and customer experience in your browser |
 | [Pipeline notebook](notebooks/olist_pipeline.ipynb) | Ingestion, cleaning, analytical modelling, and validation |
 | [Power BI dashboard](dashboards/powerbi/Team_3_PowerBI_Dashboard.pbix) | Download the report and open it in Power BI Desktop |
 | [Tableau workbook](dashboards/tableau/Final%20Project-Olist%20Dashboard_v2%201.twb) | Inspect the Tableau workbook; local CSV connections require exported data |
 | [Architecture diagram](images/medallion_architecture.png) | Pipeline stages and data flow |
 
-The Tableau Public dashboard was published as part of the project. Its live URL has not yet been added to this portfolio. The workbook is included above.
+Start with the interactive Tableau dashboard for a quick overview of the results, then explore the notebook for implementation details.
 
 ## Architecture
 
